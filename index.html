@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ffd700">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Keuangan Bulanan">
+    <link rel="manifest" href="manifest.json">
+    <title>Keuangan Bulanan Saya</title>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        body {
+            background: #1a1a2e;
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+            padding-bottom: 80px;
+        }
+        .container {
+            max-width: 450px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #ffd700;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+        }
+        .card {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .card h2 {
+            font-size: 1rem;
+            color: #00d9ff;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #0f3460;
+            padding-bottom: 6px;
+        }
+        .income-item, .expense-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #0f3460;
+            font-size: 0.92rem;
+        }
+        .income-item:last-child, .expense-item:last-child {
+            border-bottom: none;
+        }
+        .amount {
+            float: right;
+            font-weight: 600;
+        }
+        .income { color: #00ff88; }
+        .expense { color: #ff6b6b; }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 0.95rem;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #ffd700;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 0.95rem;
+        }
+        .btn:hover { background: #ffed4a; }
+        .btn-secondary {
+            background: #0f3460;
+            color: #fff;
+            margin-top: 8px;
+        }
+        .btn-secondary:hover { background: #1a4b8c; }
+        .reminder-status {
+            padding: 8px;
+            border-radius: 6px;
+            margin-top: 8px;
+            font-size: 0.85rem;
+        }
+        .active { background: #0f3460; color: #00ff88; }
+        .inactive { background: #2c1a1a; color: #ff8888; }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 6px 0;
+            border-radius: 6px;
+            border: none;
+            background: #0f3460;
+            color: #fff;
+        }
+        .install-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 420px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>💰 Daftar Keuangan Bulanan</h1>
+
+    <!-- Pemasukan -->
+    <div class="card">
+        <h2>📈 Pemasukan</h2>
+        <div class="income-item">
+            Gaji <span class="amount income" id="gajiValue">Rp 0</span>
+        </div>
+        <div class="income-item">
+            Tambahan <span class="amount income" id="tambahanValue">Rp 0</span>
+        </div>
+        <button class="btn btn-secondary" onclick="editIncome()">Ubah Pemasukan</button>
+    </div>
+
+    <!-- Pengeluaran Tetap -->
+    <div class="card">
+        <h2>📉 Pengeluaran Bulanan</h2>
+        <div id="expenseList"></div>
+    </div>
+
+    <!-- Ringkasan -->
+    <div class="card">
+        <h2>📊 Ringkasan Bulanan</h2>
+        <div class="summary-row">
+            <span>Total Pemasukan:</span>
+            <span class="income" id="totalIncome">Rp 0</span>
+        </div>
+        <div class="summary-row">
+            <span>Total Pengeluaran:</span>
+            <span class="expense" id="totalExpense">Rp 0</span>
+        </div>
+        <div class="summary-row" style="border-top: 1px solid #555; padding-top: 10px; font-weight: bold;">
+            <span>Sisa Saldo:</span>
+            <span id="balance">Rp 0</span>
+        </div>
+    </div>
+
+    <!-- Pengaturan Pengingat -->
+    <div class="card">
+        <h2>🔔 Pengingat Pembayaran</h2>
+        <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 8px;">Notifikasi: tanggal 27 s/d akhir bulan setiap bulan</p>
+        <div id="reminderStatus" class="reminder-status inactive">Pengingat belum diaktifkan</div>
+        <button class="btn" onclick="initOneSignal()">Aktifkan Pengingat OneSignal</button>
+    </div>
+</div>
+
+<button class="btn install-btn" id="installBtn" style="display:none; background:#00d9ff;">📲 Pasang Aplikasi di HP</button>
+
+<script>
+// Data Pengeluaran
+let expenses = [
+    { id: 1, name: 'Pembayaran Rumah', amount: 980000, note: '73 bulan' },
+    { id: 2, name: 'Pembayaran S-Pay Later', amount: 590000, note: '7 bulan' },
+    { id: 3, name: 'Pembayaran S-Pinjam', amount: 700000, note: '3 bulan' },
+    { id: 4, name: 'Pembayaran Motor', amount: 500000, note: '24 bulan' },
+    { id: 5, name: 'Nafkah Istri', amount: 3500000, note: 'Setiap bulan' },
+    { id: 6, name: 'Uang Jajan Sekolah', amount: 600000, note: 'Setiap bulan' }
+];
+
+let income = { gaji: 0, tambahan: 0 };
+
+function formatRupiah(angka) {
+    return 'Rp ' + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function renderExpenses() {
+    const list = document.getElementById('expenseList');
+    list.innerHTML = '';
+    expenses.forEach(item => {
+        list.innerHTML += `
+            <div class="expense-item">
+                ${item.name} <span class="amount expense">${formatRupiah(item.amount)}</span>
+                <div style="font-size: 0.8rem; color: #888; margin-top: 2px;">${item.note}</div>
+            </div>
+        `;
+    });
+}
+
+function calculateSummary() {
+    const totalIncome = income.gaji + income.tambahan;
+    const totalExpense = expenses.reduce((sum, item) => sum + item.amount, 0);
+    const balance = totalIncome - totalExpense;
+
+    document.getElementById('gajiValue').textContent = formatRupiah(income.gaji);
+    document.getElementById('tambahanValue').textContent = formatRupiah(income.tambahan);
+    document.getElementById('totalIncome').textContent = formatRupiah(totalIncome);
+    document.getElementById('totalExpense').textContent = formatRupiah(totalExpense);
+    document.getElementById('balance').textContent = formatRupiah(balance);
+    document.getElementById('balance').style.color = balance >= 0 ? '#00ff88' : '#ff6b6b';
+}
+
+function editIncome() {
+    const gaji = prompt('Masukkan jumlah Gaji:', income.gaji || '');
+    const tambahan = prompt('Masukkan Pemasukan Tambahan:', income.tambahan || '');
+    if (gaji !== null) income.gaji = parseInt(gaji.replace(/\./g, '')) || 0;
+    if (tambahan !== null) income.tambahan = parseInt(tambahan.replace(/\./g, '')) || 0;
+    saveData();
+    calculateSummary();
+}
+
+function saveData() {
+    localStorage.setItem('keuangan', JSON.stringify({ income, expenses }));
+}
+
+function loadData() {
+    const saved = localStorage.getItem('keuangan');
+    if (saved) {
+        const data = JSON.parse(saved);
+        income = data.income || { gaji: 0, tambahan: 0 };
+        expenses = data.expenses || expenses;
+    }
+}
+
+// ========== ONE SIGNAL ==========
+window.OneSignal = window.OneSignal || [];
+function initOneSignal() {
+    window.OneSignal.push(function() {
+        OneSignal.init({
+            appId: "GANTI_DENGAN_APP_ID_KAMU",
+            notifyButton: { enable: true },
+            allowLocalhostAsSecureOrigin: true
+        });
+
+        OneSignal.Slidedown.promptPush({
+            promptMessage: "Aktifkan pengingat pembayaran tanggal 27–akhir bulan?",
+            acceptButtonText: "Ya, Aktifkan!",
+            cancelButtonText: "Nanti dulu"
+        }).then(function(accepted) {
+            if (accepted) {
+                document.getElementById('reminderStatus').className = 'reminder-status active';
+                document.getElementById('reminderStatus').textContent = '✅ Pengingat aktif! Atur jadwal di dashboard OneSignal';
+            }
+        });
+    });
+}
+
+// ========== PWA Install Prompt ==========
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('installBtn').style.display = 'block';
+});
+
+document.getElementById('installBtn').addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    document.getElementById('installBtn').style.display = 'none';
+});
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+            .catch(err => console.log('SW register gagal:', err));
+    });
+}
+
+loadData();
+renderExpenses();
+calculateSummary();
+</script>
+</body>
+</html>
