@@ -1,0 +1,16 @@
+{
+    "name": "Keuangan Bulanan Saya",
+    "short_name": "Keuangan",
+    "description": "Pencatatan & pengingat pembayaran bulanan",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#1a1a2e",
+    "theme_color": "#ffd700",
+    "icons": [
+        {
+            "src": "https://cdn-icons-png.flaticon.com/512/2977/2977994.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
