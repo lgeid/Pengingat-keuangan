@@ -235,21 +235,22 @@ window.OneSignal = window.OneSignal || [];
 function initOneSignal() {
     window.OneSignal.push(function() {
         OneSignal.init({
-            appId: "4dbb9961-8d10-4364-b04f-4c62a2c2be5a"
+            appId: "4dbb9961-8d10-4b34-81d8-b04f4c62a2c2",
             notifyButton: { enable: true },
             allowLocalhostAsSecureOrigin: true
         });
 
         OneSignal.Slidedown.promptPush({
-            promptMessage: "Aktifkan pengingat pembayaran tanggal 27–akhir bulan?",
-            acceptButtonText: "Ya, Aktifkan!",
-            cancelButtonText: "Nanti dulu"
-        }).then(function(accepted) {
-            if (accepted) {
-                document.getElementById('reminderStatus').className = 'reminder-status active';
-                document.getElementById('reminderStatus').textContent = '✅ Pengingat aktif! Atur jadwal di dashboard OneSignal';
-            }
-        });
+    promptMessage: "Aktifkan pengingat pembayaran tanggal 27–akhir bulan?",
+    acceptButtonText: "Ya, Aktifkan!",
+    cancelButtonText: "Nanti dulu"
+}).then(function(accepted) { // <-- tambahkan 'accepted' di sini
+    if (accepted) {
+        document.getElementById('reminderStatus').className = 'reminder-status active';
+        document.getElementById('reminderStatus').textContent = '✅ Pengingat aktif! Atur jadwal di dashboard OneSignal';
+    }
+});
+
     });
 }
 
