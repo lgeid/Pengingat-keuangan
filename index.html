@@ -241,16 +241,15 @@ function initOneSignal() {
         });
 
         OneSignal.Slidedown.promptPush({
-    promptMessage: "Aktifkan pengingat pembayaran tanggal 27–akhir bulan?",
-    acceptButtonText: "Ya, Aktifkan!",
-    cancelButtonText: "Nanti dulu"
-}).then(function(accepted) { // <-- tambahkan 'accepted' di sini
-    if (accepted) {
-        document.getElementById('reminderStatus').className = 'reminder-status active';
-        document.getElementById('reminderStatus').textContent = '✅ Pengingat aktif! Atur jadwal di dashboard OneSignal';
-    }
-});
-
+            promptMessage: "Aktifkan pengingat pembayaran tanggal 27–akhir bulan?",
+            acceptButtonText: "Ya, Aktifkan!",
+            cancelButtonText: "Nanti dulu"
+        }).then(function(accepted) {
+            if (accepted) {
+                document.getElementById('reminderStatus').className = 'reminder-status active';
+                document.getElementById('reminderStatus').textContent = '✅ Pengingat aktif! Atur jadwal di dashboard OneSignal';
+            }
+        });
     });
 }
 
